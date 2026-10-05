@@ -1,0 +1,16 @@
+name: webapp
+networks:
+    front: {}
+services:
+    api:
+        depends_on:
+            - db
+        deploy:
+            replicas: 5
+        environment:
+            APP_ENV: production
+        image: nginx:1.25
+        ports:
+            - 80:8080
+    db:
+        image: postgres:16

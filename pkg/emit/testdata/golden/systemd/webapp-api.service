@@ -1,0 +1,19 @@
+[Unit]
+Description=isorion service api (nginx:1.25)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+After=webapp-db.service
+Requires=webapp-db.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=2
+Environment=APP_ENV=production
+ExecStartPre=-/usr/bin/docker rm -f webapp-api
+ExecStart=/usr/bin/docker run --rm --name webapp-api -p 80:8080 -e APP_ENV nginx:1.25
+ExecStop=/usr/bin/docker stop webapp-api
+
+[Install]
+WantedBy=multi-user.target

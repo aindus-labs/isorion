@@ -1,0 +1,16 @@
+[Unit]
+Description=isorion service db (postgres:16)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=2
+ExecStartPre=-/usr/bin/docker rm -f webapp-db
+ExecStart=/usr/bin/docker run --rm --name webapp-db postgres:16
+ExecStop=/usr/bin/docker stop webapp-db
+
+[Install]
+WantedBy=multi-user.target

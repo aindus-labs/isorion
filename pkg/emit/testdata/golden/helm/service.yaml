@@ -1,0 +1,24 @@
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.ports }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/managed-by: isorion-helm
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ $name }}
+  ports:
+    {{- range $svc.ports }}
+    - port: {{ .host | default .container }}
+      targetPort: {{ .container }}
+      {{- if .protocol }}
+      protocol: {{ .protocol }}
+      {{- end }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}

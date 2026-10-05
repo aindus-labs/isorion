@@ -1,0 +1,35 @@
+version: "1.0"
+
+variables:
+  env: "staging"
+  regions: ["eu-west", "us-east"]
+  base_port: 9000
+
+project:
+  name: multi-env-demo
+
+services:
+  # One service per region via @for
+  @for $region in $regions:
+    "api-${region}":
+      image: "myorg/api:2.1"
+      replicas: ${len($regions)}
+      environment:
+        REGION: $region
+        LISTEN: "${base_port}"
+      networks:
+        - edge
+
+  monitor:
+    image: "prom/prometheus:latest"
+    ports:
+      - "9090:9090"
+    @if $env == "production":
+      deploy: true
+    @else:
+      replicas: 1
+    networks:
+      - edge
+
+networks:
+  edge: {}

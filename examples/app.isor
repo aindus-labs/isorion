@@ -1,0 +1,59 @@
+version: "1.0"
+
+variables:
+  env: "production"
+  domain: "example.com"
+  api_replicas: 3
+  debug_image: "nginx:1.25-debug"
+
+project:
+  name: webapp
+  description: "Demo web application"
+  labels:
+    tier: frontend
+
+services:
+  api:
+    image: "nginx:1.25"
+    @if $env == "production":
+      replicas: $api_replicas
+      restart: always
+    @else:
+      image: $debug_image
+      replicas: 1
+    ports:
+      - "80:8080"
+      - "443:8443"
+    environment:
+      APP_ENV: $env
+      APP_DOMAIN: "${domain}"
+      WORKERS: ${2 + 2}
+    depends_on:
+      - db
+    networks:
+      - front
+
+  db:
+    image: "postgres:16"
+    environment:
+      POSTGRES_PASSWORD: "dev-only"
+    volumes:
+      - "pgdata:/var/lib/postgresql/data"
+    networks:
+      - front
+
+  worker:
+    image: "nginx:1.25"
+    @if $api_replicas > 2:
+      replicas: 2
+    @else:
+      replicas: 1
+    networks:
+      - front
+
+networks:
+  front:
+    driver: bridge
+
+volumes:
+  pgdata: {}

@@ -1,0 +1,17 @@
+- hosts: all
+  name: Deploy webapp
+  tasks:
+    - community.docker.docker_container:
+        env:
+            APP_ENV: production
+        image: nginx:1.25
+        name: webapp-api
+        ports:
+            - 80:8080
+        state: started
+      name: Deploy webapp-api
+    - community.docker.docker_container:
+        image: postgres:16
+        name: webapp-db
+        state: started
+      name: Deploy webapp-db

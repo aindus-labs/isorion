@@ -1,0 +1,33 @@
+capsule:
+    labels:
+        generated-by: isorion
+        intent-language: isorion-yaml++
+        source-version: "1.0"
+    name: webapp
+    version: 0.1.0
+graph:
+    edges:
+        - from: db
+          to: api
+          type: depends_on
+    nodes:
+        - entrypoint: docker
+          id: api
+          params:
+            env:
+                APP_ENV: production
+            image: nginx:1.25
+            ports:
+                - 80:8080
+            replicas: 5
+        - entrypoint: docker
+          id: db
+          params:
+            image: postgres:16
+intent:
+    description: Intention compiled by ISORION (universal infrastructure compiler)
+    type: service
+payload:
+    runtime: docker
+security:
+    sandbox: strict

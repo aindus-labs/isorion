@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    labels:
+        app.kubernetes.io/managed-by: isorion
+        app.kubernetes.io/name: db
+        app.kubernetes.io/part-of: webapp
+    name: db
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: db
+    template:
+        metadata:
+            labels:
+                app.kubernetes.io/managed-by: isorion
+                app.kubernetes.io/name: db
+                app.kubernetes.io/part-of: webapp
+        spec:
+            containers:
+                - image: postgres:16
+                  name: db

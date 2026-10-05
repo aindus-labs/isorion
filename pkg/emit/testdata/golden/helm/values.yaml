@@ -1,0 +1,11 @@
+services:
+    api:
+        env:
+            APP_ENV: production
+        image: nginx:1.25
+        ports:
+            - container: 8080
+              host: 80
+        replicas: 5
+    db:
+        image: postgres:16

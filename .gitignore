@@ -1,0 +1,17 @@
+# Binaries
+bin/
+*.exe
+
+# Output artifacts
+output/
+out/
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Go
+*.test
+*.prof
