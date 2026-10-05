@@ -39,9 +39,20 @@ func TestCompileBadSource(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, infra, err := Validate("app.isor", []byte(fixture), Options{})
+	_, infra, _, err := Validate("app.isor", []byte(fixture), Options{})
 	if err != nil || infra.ProjectName != "webapp" {
 		t.Fatalf("infra=%+v err=%v", infra, err)
+	}
+}
+
+// Model errors carry the source position of the offending section.
+func TestValidatePositionalError(t *testing.T) {
+	_, _, _, err := Validate("x.isor", []byte("version: \"1.0\"\nservices:\n  api: { replicas: 2 }\n"), Options{})
+	if err == nil || !strings.Contains(err.Error(), "x.isor:") {
+		t.Fatalf("expected positioned error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "image or build") {
+		t.Fatalf("expected model error, got %v", err)
 	}
 }
 
@@ -55,7 +66,7 @@ func TestImport(t *testing.T) {
 		t.Fatalf("isor doc:\n%s", isor)
 	}
 	// canonical .isor re-validates
-	if _, _, err := Validate("out.isor", isor, Options{}); err != nil {
+	if _, _, _, err := Validate("out.isor", isor, Options{}); err != nil {
 		t.Fatalf("imported .isor does not re-validate: %v", err)
 	}
 }

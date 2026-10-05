@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/isorion-lang/isorion/pkg/isorion"
@@ -33,5 +36,17 @@ func cmdServe(args []string) error {
 	}
 	fmt.Printf("isorion %s serving on http://%s (endpoints: /v1/compile /v1/import /v1/validate /v1/targets /v1/importers /v1/version)\n",
 		version, ln.Addr())
-	return srv.Serve(ln)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	go func() { // graceful shutdown: Ctrl-C / SIGTERM → 5s drain
+		<-ctx.Done()
+		dctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(dctx)
+	}()
+	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }

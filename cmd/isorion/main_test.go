@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/isorion-lang/isorion/pkg/lang"
 )
 
 const fixtureIsor = `version: "1.0"
@@ -221,21 +219,5 @@ func TestFmtUnquotesDirectives(t *testing.T) {
 	}
 	if !strings.Contains(got, `@if $env == "prod":`) {
 		t.Fatalf("unexpected output: %q", got)
-	}
-}
-
-// --- posify -----------------------------------------------------------------
-
-func TestPosifyPositions(t *testing.T) {
-	doc, err := lang.LoadWith("x.isor", []byte(fixtureIsor), lang.Options{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = posify(doc, errors.New("services.api: bad"))
-	if err == nil || !strings.Contains(err.Error(), "x.isor:") {
-		t.Fatalf("expected positioned error, got %v", err)
-	}
-	if got := posify(doc, errors.New("unrelated")).Error(); !strings.HasPrefix(got, "model: ") {
-		t.Fatalf("expected model: prefix, got %q", got)
 	}
 }

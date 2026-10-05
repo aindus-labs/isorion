@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/isorion-lang/isorion/pkg/emit"
-	"github.com/isorion-lang/isorion/pkg/lang"
-	"github.com/isorion-lang/isorion/pkg/parse"
+	"github.com/isorion-lang/isorion/pkg/isorion"
 )
 
 // cmdImport lifts an existing infra file (docker-compose.yml, ...) back to
@@ -28,57 +27,29 @@ func cmdImport(args []string) error {
 	}
 	srcPath := fs.Arg(0)
 
-	imp, err := parse.Get(*format)
-	if err != nil {
-		return err
-	}
 	data, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
-	infra, err := imp.Parse(data, filepath.Base(srcPath))
+	isorDoc, _, err := isorion.Import(*format, data, filepath.Base(srcPath))
 	if err != nil {
 		return err
 	}
-
-	files, warnings, err := emit.Run("isor", &lang.Document{}, infra)
-	if err != nil {
-		return err
-	}
-	printWarnings(warnings)
 
 	if *out == "" {
-		for _, f := range files {
-			if _, err := os.Stdout.Write(f.Content); err != nil {
-				return err
-			}
-		}
-		return nil
+		_, err = os.Stdout.Write(isorDoc)
+		return err
 	}
-	for _, f := range files {
-		dest := *out
-		if len(files) > 1 {
-			dest = filepath.Join(*out, f.Path)
-		}
-		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-			return err
-		}
-		if err := os.WriteFile(dest, f.Content, 0o644); err != nil {
-			return err
-		}
-		fmt.Printf("import: %s → %s\n", srcPath, dest)
+	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
+		return err
 	}
+	if err := os.WriteFile(*out, isorDoc, 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("import: %s → %s\n", srcPath, *out)
 	return nil
 }
 
 func joinNames() string {
-	names := parse.Names()
-	out := ""
-	for i, n := range names {
-		if i > 0 {
-			out += ", "
-		}
-		out += n
-	}
-	return out
+	return strings.Join(isorion.Importers(), ", ")
 }

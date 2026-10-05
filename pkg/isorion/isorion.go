@@ -34,13 +34,13 @@ type Result struct {
 // Compile parses + expands a .isor source and emits it to each target
 // (composite `base+tx` allowed). Fail-fast: the first error aborts.
 func Compile(filename string, src []byte, targets []string, opts Options) (*Result, error) {
-	doc, infra, err := build(filename, src, opts)
+	doc, infra, cwarns, err := build(filename, src, opts)
 	if err != nil {
 		return nil, err
 	}
-	res := &Result{}
+	res := &Result{Warnings: cwarns}
 	for _, t := range targets {
-		files, warns, err := emit.Run(t, doc, infra)
+		files, warns, err := Emit(t, doc, infra)
 		if err != nil {
 			return nil, fmt.Errorf("target %s: %w", t, err)
 		}
@@ -50,9 +50,17 @@ func Compile(filename string, src []byte, targets []string, opts Options) (*Resu
 	return res, nil
 }
 
+// Emit runs a single (possibly composite `base+tx`) target against an
+// already-built document — for callers holding a Document (streaming,
+// multi-target loops). Pure passthrough to the emit registry.
+func Emit(target string, doc *lang.Document, infra *model.Infra) ([]emit.File, []string, error) {
+	return emit.Run(target, doc, infra)
+}
+
 // Validate parses + expands + model-checks a .isor source without
-// emitting. Returns the document and the normalized infra on success.
-func Validate(filename string, src []byte, opts Options) (*lang.Document, *model.Infra, error) {
+// emitting. Returns the document, the normalized infra and the
+// advisory/mandatory-constraint warnings on success.
+func Validate(filename string, src []byte, opts Options) (*lang.Document, *model.Infra, []string, error) {
 	return build(filename, src, opts)
 }
 
@@ -83,21 +91,21 @@ func Importers() []string { return parse.Names() }
 
 // build is the shared front-end: source → Document → Infra, with model
 // errors position-prefixed when the offending section is locatable.
-func build(filename string, src []byte, opts Options) (*lang.Document, *model.Infra, error) {
+// Advisory/mandatory constraint warnings are returned to the caller.
+func build(filename string, src []byte, opts Options) (*lang.Document, *model.Infra, []string, error) {
 	doc, err := lang.LoadWith(filename, src, lang.Options(opts))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	infra, err := model.FromBody(doc.Version, doc.Body)
 	if err != nil {
-		return nil, nil, posify(doc, err)
+		return nil, nil, nil, posify(doc, err)
 	}
 	cwarns, err := model.CheckConstraints(doc.Body, doc.Constraints)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%s: %w", doc.Source, err)
+		return nil, nil, nil, fmt.Errorf("%s: %w", doc.Source, err)
 	}
-	_ = cwarns // advisory/mandatory constraint warnings surface via Result in callers that opt in
-	return doc, infra, nil
+	return doc, infra, cwarns, nil
 }
 
 // posify prefixes a model-build error with the source position of the

@@ -115,7 +115,7 @@ func validateEndpoint(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	_, infra, err := Validate(nonEmpty(req.Filename, "input.isor"), []byte(req.Source),
+	_, infra, warns, err := Validate(nonEmpty(req.Filename, "input.isor"), []byte(req.Source),
 		Options{Profile: req.Profile, Set: req.Set})
 	if err != nil {
 		// 200 with ok:false — validation outcome is the payload, not transport.
@@ -124,6 +124,7 @@ func validateEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok": true, "version": infra.Version, "services": infra.ServiceNames,
+		"warnings": warns,
 	})
 }
 

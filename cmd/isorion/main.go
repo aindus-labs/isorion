@@ -2,6 +2,8 @@
 //
 //	isorion fusion <file.isor> [-t target[,target...]] [-o output-dir]
 //	isorion validate <file.isor>
+//	isorion import <file> -f <format>
+//	isorion serve [-addr :8080]
 //	isorion targets
 //	isorion version
 package main

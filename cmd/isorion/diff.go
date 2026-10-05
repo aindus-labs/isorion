@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/isorion-lang/isorion/pkg/emit"
-	"github.com/isorion-lang/isorion/pkg/lang"
-	"github.com/isorion-lang/isorion/pkg/model"
+	"github.com/isorion-lang/isorion/pkg/isorion"
 )
 
 // errDiffer exits the process with code 1 after the diff summary —
@@ -42,21 +40,18 @@ func cmdDiff(args []string) error {
 	if err != nil {
 		return err
 	}
-	doc, err := loadDoc(srcPath, lang.Options{Profile: *profile, Set: setMap})
+	src, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
-	infra, err := model.FromBody(doc.Version, doc.Body)
-	if err != nil {
-		return posify(doc, err)
-	}
-	cwarns, err := model.CheckConstraints(doc.Body, doc.Constraints)
+	doc, infra, cwarns, err := isorion.Validate(srcPath, src,
+		isorion.Options{Profile: *profile, Set: setMap})
 	printWarnings(cwarns)
 	if err != nil {
-		return fmt.Errorf("%s: %w", doc.Source, err)
+		return err
 	}
 
-	targets := emit.Names()
+	targets := isorion.Targets()
 	if *targetsFlag != "" {
 		targets = strings.Split(*targetsFlag, ",")
 	}
@@ -64,7 +59,7 @@ func cmdDiff(args []string) error {
 	changed := 0
 	for _, t := range targets {
 		t = strings.TrimSpace(t)
-		files, warnings, err := emit.Run(t, doc, infra)
+		files, warnings, err := isorion.Emit(t, doc, infra)
 		if err != nil {
 			return fmt.Errorf("target %s: %w", t, err)
 		}

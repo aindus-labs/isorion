@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/isorion-lang/isorion/pkg/emit"
+	"github.com/isorion-lang/isorion/pkg/isorion"
 	"github.com/isorion-lang/isorion/pkg/lang"
 	"github.com/isorion-lang/isorion/pkg/model"
 )
@@ -60,19 +61,6 @@ func parseSets(raw []string) (map[string]string, error) {
 	return m, nil
 }
 
-// posify prefixes a model-build error with the source position of the
-// offending top-level section when known: `file:line:col: model: …`.
-func posify(doc *lang.Document, err error) error {
-	section := err.Error()
-	if i := strings.IndexAny(section, ".:"); i >= 0 {
-		section = section[:i]
-	}
-	if pos, ok := doc.Positions[section]; ok {
-		return fmt.Errorf("%s:%d:%d: model: %w", doc.Source, pos.Line, pos.Col, err)
-	}
-	return fmt.Errorf("model: %w", err)
-}
-
 // printWarnings sends capability + advisory warnings to stderr (stdout
 // stays clean for --stdout piping).
 func printWarnings(warnings []string) {
@@ -84,7 +72,7 @@ func printWarnings(warnings []string) {
 // emitToStdout prints one target's files as a --- separated stream
 // (kubectl/conftest-compatible).
 func emitToStdout(target string, doc *lang.Document, infra *model.Infra) error {
-	files, warnings, err := emit.Run(target, doc, infra)
+	files, warnings, err := isorion.Emit(target, doc, infra)
 	if err != nil {
 		return fmt.Errorf("target %s: %w", target, err)
 	}
@@ -125,21 +113,18 @@ func cmdFusion(args []string) error {
 	if err != nil {
 		return err
 	}
-	doc, err := loadDoc(srcPath, lang.Options{Profile: *profile, Set: setMap})
+	src, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
-	infra, err := model.FromBody(doc.Version, doc.Body)
-	if err != nil {
-		return posify(doc, err)
-	}
-	cwarns, err := model.CheckConstraints(doc.Body, doc.Constraints)
+	doc, infra, cwarns, err := isorion.Validate(srcPath, src,
+		isorion.Options{Profile: *profile, Set: setMap})
 	printWarnings(cwarns)
 	if err != nil {
-		return fmt.Errorf("%s: %w", doc.Source, err)
+		return err
 	}
 
-	targets := emit.Names()
+	targets := isorion.Targets()
 	if *targetsFlag != "" {
 		targets = strings.Split(*targetsFlag, ",")
 	}
@@ -154,7 +139,7 @@ func cmdFusion(args []string) error {
 	written := 0
 	for _, t := range targets {
 		t = strings.TrimSpace(t)
-		files, warnings, err := emit.Run(t, doc, infra)
+		files, warnings, err := isorion.Emit(t, doc, infra)
 		if err != nil {
 			return fmt.Errorf("target %s: %w", t, err)
 		}
@@ -194,17 +179,15 @@ func cmdValidate(args []string) error {
 	if err != nil {
 		return err
 	}
-	doc, err := loadDoc(srcPath, lang.Options{Profile: *profile, Set: setMap})
+	src, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
 	}
-	if _, err := model.FromBody(doc.Version, doc.Body); err != nil {
-		return posify(doc, err)
-	}
-	cwarns, err := model.CheckConstraints(doc.Body, doc.Constraints)
+	doc, _, cwarns, err := isorion.Validate(srcPath, src,
+		isorion.Options{Profile: *profile, Set: setMap})
 	printWarnings(cwarns)
 	if err != nil {
-		return fmt.Errorf("%s: %w", doc.Source, err)
+		return err
 	}
 	fmt.Printf("validate: %s OK (version=%q, %d variable(s), %d top-level section(s))\n",
 		srcPath, doc.Version, len(doc.Variables), len(doc.Body))
@@ -213,17 +196,9 @@ func cmdValidate(args []string) error {
 
 func cmdTargets(_ []string) error {
 	fmt.Println("Available targets (community edition):")
-	for _, name := range emit.Names() {
+	for _, name := range isorion.Targets() {
 		e, _ := emit.Get(name)
 		fmt.Printf("  %-16s %s\n", name, e.Description())
 	}
 	return nil
-}
-
-func loadDoc(path string, opts lang.Options) (*lang.Document, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return lang.LoadWith(path, data, opts)
 }
