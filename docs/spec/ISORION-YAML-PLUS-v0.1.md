@@ -196,6 +196,29 @@ app.isor (ce dialecte)  --isorion fusion -t huborion-->  app.huborion.isor
 app.huborion.isor       --orion build-->                 app.ocaps (capsule signée)
 ```
 
+### 6.1 Convention d'extension — OFFICIELLE
+
+Pour lever l'ambiguïté `.isor`, la convention suivante est normative :
+
+| Extension | Contenu | Produit par | Écrit à la main ? |
+|---|---|---|---|
+| `*.isor` | YAML++ universel (ce document) | humain, ou cible `isor` (`isorion import` / `fusion -t isor`) | **oui** |
+| `*.huborion.isor` | dialecte ORION (`capsule:`, `graph:`, `intent:`…) | **uniquement** `fusion -t huborion` | **non** — artefact généré |
+| `*.ocaps` | capsule ORION signée | `orion build` | non |
+
+Règles :
+
+- Un fichier `*.isor` sans infixe est **toujours** du YAML++ universel. Le
+  dialecte ORION généré porte **obligatoirement** l'infixe `.huborion`.
+- `*.huborion.isor` est un **artefact de compilation** : on ne le modifie
+  pas à la main (la source de vérité est le `*.isor` universel), comme on
+  ne modifie pas un `.o`. Il reste lisible et ré-importable
+  (`isorion import --from huborion`) pour le round-trip.
+- Justification : le dialecte ORION n'est jamais rédigé par un humain —
+  une convention d'extension suffit ; il n'y a pas de seconde courbe
+  d'apprentissage. Si un besoin d'édition manuelle du dialecte émerge,
+  cette décision sera réouverte (voir `mission/CHANTIER-I6`).
+
 ## 7. État du chantier (reprise par un agent)
 
 État réel au 2026-10-05 — **ce qui existe vs ce qui est roadmap**.

@@ -52,6 +52,12 @@ déploie **et atteste**.
   « ISORION » seul pour le compilateur universel.
 - Les deux repos sont indépendants : Orion ne dépend pas d'isorion ;
   il consomme la sortie `huborion` en entrée.
+- **Convention d'extension normative** (spec §6.1, décision 2026-10-05) :
+  `*.isor` = YAML++ universel ; `*.huborion.isor` = dialecte ORION
+  **généré** (jamais édité à la main — artefact, ré-importable via
+  `isorion import --from huborion`). Option « deux schémas assumés »
+  retenue ; l'unification via `model.Infra` a été écartée (pivot lossy :
+  `intent`, `security`, `payload`, edges typés hors périmètre).
 
 ## Ouverture future
 
