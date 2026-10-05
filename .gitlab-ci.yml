@@ -1,0 +1,36 @@
+# ISORION CI — mirrors .github/workflows/ci.yml on the AINDUS forge.
+# Jobs run on any runner with Docker executor (image: golang).
+
+stages:
+  - test
+
+default:
+  image: golang:1.22
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/go-build
+      - .cache/gomod
+  before_script:
+    - export GOCACHE=$CI_PROJECT_DIR/.cache/go-build
+    - export GOMODCACHE=$CI_PROJECT_DIR/.cache/gomod
+
+test:
+  stage: test
+  script:
+    - unformatted=$(gofmt -l .) && [ -z "$unformatted" ] || { echo "unformatted files:"; echo "$unformatted"; exit 1; }
+    - go vet ./...
+    - go build ./...
+    - go test ./... -count=1 -race -coverprofile=coverage.out
+  artifacts:
+    when: always
+    paths:
+      - coverage.out
+    expire_in: 1 week
+
+# Short bounded fuzz of the importer surface — catches panics on malformed
+# real-world inputs before they reach users.
+fuzz-seeds:
+  stage: test
+  script:
+    - go test ./pkg/parse/ -run=Fuzz -fuzz=FuzzImport -fuzztime=60s -count=1
