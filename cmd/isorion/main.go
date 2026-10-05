@@ -39,6 +39,8 @@ func main() {
 		err = cmdFmt(os.Args[2:])
 	case "import":
 		err = cmdImport(os.Args[2:])
+	case "serve":
+		err = cmdServe(os.Args[2:])
 	case "targets":
 		err = cmdTargets(os.Args[2:])
 	case "version", "--version", "-v":
@@ -79,6 +81,8 @@ Usage:
       Lift an existing infra file (docker-compose.yml...) back to .isor.
   isorion fmt <file.isor> [-w]
       Canonicalize a .isor file (stdout, or in-place with -w).
+  isorion serve [-addr :8080]
+      Run the JSON/HTTP API (v1/compile, v1/import, v1/validate, v1/targets).
   isorion targets
       List available compilation targets.
   isorion version

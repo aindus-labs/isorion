@@ -88,10 +88,26 @@ existing infra back to a canonical `.isor` — formats: `docker-compose`,
 (values.yaml), `systemd`, `terraform`, `yaml`. Round-trips
 `parse(emit(x)) == x` are tested for every emitted format.
 
+## Interfaces (3 levels)
+
+- **Go library** — `import "github.com/isorion-lang/isorion/pkg/isorion"`:
+  `Compile`, `Import`, `Validate`, `Targets`, `Importers`. The CLI is a
+  thin client over this package; emitters/importers extend via the
+  `emit.Emitter` / `parse.Importer` registries.
+- **CLI** — `fusion · validate · diff · fmt · import · serve · targets ·
+  version`; `fusion --stdout` pipes to `kubectl`/`conftest`.
+- **HTTP API** — `isorion serve -addr :8080` exposes JSON endpoints:
+  `POST /v1/compile` `{source, targets[]}` → `{files[], warnings[]}`,
+  `POST /v1/import` `{format, data}` → `{isor}`, `POST /v1/validate`,
+  `GET /v1/targets|importers|version`, `GET /healthz`. Stdlib-only,
+  read-only compiler — no state, no auth by design (put it behind your
+  own proxy).
+
 ## Project layout
 
 ```
-cmd/isorion/    CLI (fusion, validate, diff, fmt, import, targets, version)
+cmd/isorion/    CLI (fusion, validate, diff, fmt, import, serve, targets, version)
+pkg/isorion/    Public API: Compile/Import/Validate facade + HTTP handler
 pkg/lang/       YAML++ front-end: preprocess, expressions, tree expansion,
                 multi-file composition (@include/@extends), secrets
 pkg/model/      Normalized infrastructure model + constraint checking
