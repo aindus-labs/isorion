@@ -1,0 +1,12 @@
+http:
+    routers:
+        api:
+            entryPoints:
+                - web
+            rule: Host(`api.local`)
+            service: api
+    services:
+        api:
+            loadBalancer:
+                servers:
+                    - url: http://api:80

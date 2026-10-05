@@ -17,6 +17,12 @@ func (composeEmitter) Name() string        { return "docker-compose" }
 func (composeEmitter) Description() string { return "Docker Compose file (docker-compose.yml)" }
 
 func (composeEmitter) Emit(doc *lang.Document, infra *model.Infra) ([]File, error) {
+	return emitCompose(doc, infra, "docker-compose.yml", "docker-compose")
+}
+
+// emitCompose builds the compose-family spec (docker-compose, podman-compose
+// share the schema; only the artifact name differs).
+func emitCompose(doc *lang.Document, infra *model.Infra, filename, target string) ([]File, error) {
 	services := map[string]any{}
 	for _, name := range infra.ServiceNames {
 		s := infra.Services[name]
@@ -96,7 +102,7 @@ func (composeEmitter) Emit(doc *lang.Document, infra *model.Infra) ([]File, erro
 
 	data, err := yaml.Marshal(out)
 	if err != nil {
-		return nil, fmt.Errorf("docker-compose emit: %w", err)
+		return nil, fmt.Errorf("%s emit: %w", target, err)
 	}
-	return []File{{Path: "docker-compose.yml", Content: data}}, nil
+	return []File{{Path: filename, Content: data}}, nil
 }

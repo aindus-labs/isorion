@@ -25,12 +25,12 @@ Règles de statut (identiques à I3) :
 | Cible | Artefact | Statut | Effort | Notes |
 |---|---|---|---|---|
 | `docker-compose` | `docker-compose.yml` | ✅ livré | — | mappage 1:1 du modèle |
-| `podman-compose` | `podman-compose.yml` | 🟡 roadmap | Basse | quasi-identique compose |
+| `podman-compose` | `podman-compose.yml` | ✅ livré | — | même schéma que compose (`emitCompose` partagé) |
 | `docker-swarm` | stack file (deploy blocks) | ⚪ évalué | Basse | `deploy.replicas` existe déjà |
 | `kubernetes` | Deployment + Service YAML | ✅ livré | — | pods/replicas/ports/env |
-| `helm` | `templates/` + `values.yaml` | 🟡 roadmap | Moyenne | chart scellé : le .isor devient values |
+| `helm` | `templates/` + `values.yaml` | ✅ livré | — | chart scellé : le .isor devient values |
 | `kustomize` | `kustomization.yaml` + overlays | ⚪ évalué | Moyenne | patterns base/overlay ↔ `@extends` |
-| `nomad` | `job.nomad` (HCL) | 🟡 roadmap | Moyenne | proche terraform |
+| `nomad` | `job.nomad` (HCL) | ✅ livré | — | driver docker, un groupe par service |
 | `openshift` | `DeploymentConfig`/`Route` | ⚪ évalué | Moyenne | variante k8s |
 | `ecs` | task definitions JSON | 🟡 roadmap | Moyenne | AWS spécifique |
 | `podman-quadlet` | `.container` units | ⚪ évalué | Basse | pont naturel systemd |
@@ -40,7 +40,7 @@ Règles de statut (identiques à I3) :
 
 | Cible | Artefact | Statut | Effort | Notes |
 |---|---|---|---|---|
-| `terraform` | `.tf` HCL | 🟡 roadmap | Moyenne | **débloque aws/azure/gcp via providers** |
+| `terraform` | `.tf` HCL | ✅ livré | — | provider docker ; aws/azure/gcp via providers manuels |
 | `opentofu` | `.tf` (fork HCL) | ⚪ évalué | Basse | même émetteur que terraform |
 | `pulumi` | `Pulumi.yaml` + programme | ⚪ évalué | Moyenne | Pulumi-YAML possible |
 | `cloudformation` | template YAML/JSON | 🟡 roadmap | Moyenne | AWS natif |
@@ -66,7 +66,7 @@ Règles de statut (identiques à I3) :
 
 | Cible | Artefact | Statut | Effort | Notes |
 |---|---|---|---|---|
-| `systemd` | units `.service` | 🟡 roadmap | Basse | aligné adaptateur natif ORION |
+| `systemd` | units `.service` | ✅ livré | — | aligné adaptateur natif ORION |
 | `launchd` | plist `.plist` | ⚪ évalué | Basse | macOS |
 | `windows-service` | manifests/service registration | ⚪ évalué | Moyenne | Windows |
 | `cron` | crontab | ⚪ évalué | Basse | jobs planifiés |
@@ -114,7 +114,7 @@ Règles de statut (identiques à I3) :
 
 | Cible | Artefact | Statut | Effort | Notes |
 |---|---|---|---|---|
-| `traefik` | file provider YAML | ⚪ évalué | Basse | YAML natif, proche du modèle |
+| `traefik` | file provider YAML | ✅ livré | — | routers+services par service avec ports |
 | `nginx` | `nginx.conf` | ⚪ évalué | Moyenne | syntaxe dédiée |
 | `envoy` | `envoy.yaml` | ⚪ évalué | Moyenne | YAML, verbeux |
 | `haproxy` | `haproxy.cfg` | ⚪ évalué | Moyenne | syntaxe dédiée |
@@ -134,7 +134,7 @@ Règles de statut (identiques à I3) :
 
 | Cible | Artefact | Statut | Effort | Notes |
 |---|---|---|---|---|
-| `prometheus` | `prometheus.yml` scrape config | ⚪ évalué | Basse | YAML natif |
+| `prometheus` | `prometheus.yml` scrape config | ✅ livré | — | un job par service avec ports |
 | `alertmanager` | `alertmanager.yml` | ⚪ évalué | Basse | YAML natif |
 | `otel-collector` | `otelcol.yaml` pipelines | ⚪ évalué | Moyenne | YAML natif |
 | `vector`/`fluentbit` | `vector.toml`/`.conf` | ⚪ évalué | Moyenne | pipelines logs |
@@ -155,9 +155,9 @@ Règles de statut (identiques à I3) :
 |---|---|---|---|---|
 | `yaml` | `resolved.yaml` | ✅ livré | — | référence expanded |
 | `huborion` | dialecte `.isor` ORION | ✅ livré | — | pont exécution attestée (I6) |
-| `json` | `resolved.json` | ⚪ évalué | Trivial | interop outillage |
-| `toml` | `resolved.toml` | ⚪ évalué | Trivial | interop outillage |
-| `dotenv` | `.env` | ⚪ évalué | Trivial | extraction env/ports |
+| `json` | `resolved.json` | ✅ livré | — | même payload que `yaml` |
+| `toml` | `resolved.toml` | ⚪ évalué | Trivial | interop outillage — nécessite un encodeur TOML (dep ou mini-encodeur) |
+| `dotenv` | `.env` | ✅ livré | — | `SERVICE_KEY=value`, secrets en `${SECRET_*}` |
 | `cue`/`jsonnet` | export langage | ⚪ évalué | Moyenne | interop langages de config |
 
 ## 14. Hors scope (refusés, avec raison)
@@ -173,26 +173,25 @@ Règles de statut (identiques à I3) :
 
 ## Comptage honnête (mise à jour automatique par `isorion targets`)
 
-- **Livrées : 5** — `yaml`, `docker-compose`, `kubernetes`, `ansible`, `huborion`
-- **Roadmap prochaine** : `terraform` → `helm` → `systemd` (déjà priorisé I3)
+- **Livrées : 15** — `yaml`, `json`, `dotenv`, `docker-compose`, `podman-compose`, `kubernetes`, `helm`, `terraform`, `nomad`, `ansible`, `systemd`, `traefik`, `prometheus`, `huborion`, `isor`
+- **Roadmap prochaine** : `argocd`/`flux` (wrappers GitOps), `ecs`, `cloudformation`, `kustomize`
 - **Inventaire total : ~75 cibles nommées** (70 lignes, entrées fusionnées
   décomptées), 6 hors scope
-- Le « 13+ cibles » d'isorion.org correspond à : docker, compose, k8s, helm,
-  terraform, cloudformation, aws, azure, gcp, ansible, systemd, nomad +
-  huborion → atteint quand les 🟡 roadmap sont livrées
+- Le « 13+ cibles » d'isorion.org (docker, compose, k8s, helm, terraform,
+  ansible, systemd, nomad + huborion…) est **atteint** — 15 cibles livrées
+  dont toutes les têtes de liste ; il reste cloudformation/aws/azure/gcp
+  en spécifique-provider
 
 ## Priorisation rationnelle (ordre de déblocage)
 
 ```
-1. terraform     → HCL déclaratif, couvre aws/azure/gcp par providers
-2. helm          → demande k8s dominante
-3. systemd       → natif, cohérent avec ORION native adapter
-4. podman-compose→ quasi-gratuit (fork compose)
-5. nomad         → HCL, mêmes mécanismes que terraform
-6. json          → trivial, interop
-7. gitops (argocd/flux) → wrappers légers sur sorties existantes
-8. traefik/prometheus → YAML natif, quasi-gratuit
-9. json/toml/dotenv → triviaux, interop
+✅ terraform / helm / systemd / podman-compose / nomad / json
+✅ traefik / prometheus / dotenv — livrés 2026-10-05
+1. gitops (argocd/flux) → wrappers légers sur sorties existantes
+2. ecs / cloudformation → provider-specific, effort moyen
+3. toml → encodeur TOML (dep ou mini-encodeur)
+4. dockerfile → cible build-only, effort bas
+5. external-secrets → paire naturelle avec `secrets:` (I7-N)
 ```
 
 > Beaucoup d'entrées ⚪ deviennent triviales une fois `terraform`, `helm`
